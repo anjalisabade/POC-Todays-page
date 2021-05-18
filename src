@@ -42,3 +42,232 @@
 
 
 <router-outlet></router-outlet>
+
+---------------
+const express = require('express');
+const router = express.Router();
+const bodyParser = require('body-parser');
+
+const http = require('http');
+const path = require('path');
+
+const app = express();
+const cors = require('cors');
+
+app.use(cors());
+app.use(function (req, res, next) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  next();
+});
+
+const user = {
+  name: 'userName',
+  email: "test@ymail.com"
+};
+
+app.use(bodyParser.json())
+
+app.get('/', (req, res) => {
+  res.send('Hello from server')
+})
+
+app.get('/getData', (req, res) => {
+  res.sendStatus(401);
+})
+
+app.get('/userinfo', (req, res) => {
+  res.send(user)
+
+})
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log('Express API is running at port 3000')
+})
+
+
+-------------------
+Intersecptor:
+
+import { Injectable } from '@angular/core';
+import {
+  HttpRequest,
+  HttpHandler,
+  HttpEvent,
+  HttpInterceptor,
+  HttpErrorResponse
+} from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { tap } from 'rxjs/operators'
+import { Router } from '@angular/router'
+
+@Injectable()
+export class AuthInterceptor implements HttpInterceptor {
+
+  constructor(private router: Router) { }
+
+  intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
+    console.log('Intersecptor is working!')
+
+    return next.handle(request)
+      .pipe(tap(() => { },
+        (error: any) => {
+          if (error instanceof HttpErrorResponse) {
+            console.log("not getting handled.")
+            if (error.status == 401) {
+              this.router.navigate(['login']);
+            } else {
+              return throwError(error)
+            }
+
+          }
+
+        }));
+  }
+}
+------------------------
+
+profile html
+<div class="container mt-5">
+    <div class="row" *ngIf="user">
+        <h3>Welcome to profile page!</h3>
+        <div class="col-md-3">
+            <label>Name : </label>
+        </div>
+        <div class="col-md-9">
+            {{user.name}}</div>
+        <div class="row">
+            <div class="col-md-3">
+                <label>Email : </label>
+            </div>
+            <div class="col-md-9">
+                {{user.email}}
+            </div>
+        </div>
+    </div>
+</div>
+
+-----------------------
+
+Profile TS
+import { Component, OnInit } from '@angular/core';
+import { ProfileService } from './profile.service';
+
+@Component({
+  selector: 'app-profile',
+  templateUrl: './profile.component.html',
+  styleUrls: ['./profile.component.css']
+})
+export class ProfileComponent implements OnInit {
+
+  constructor(private profileservice: ProfileService) { }
+
+  user: any;
+  errorMessage: any;
+  ngOnInit(): void {
+    this.fetchProfile();
+  }
+  fetchProfile() {
+    this.profileservice.getProfile().subscribe((data) => {
+      this.user = data;
+
+    },
+      (error) => {
+        console.log("Error is ", error)
+      })
+
+  }
+
+}
+
+-------------
+profile service
+
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs'
+import { environment } from 'src/environments/environment';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ProfileService {
+
+  constructor(private http: HttpClient) { }
+
+  api: string = environment.api;
+
+  getProfile(): Observable<any> {
+    return this.http.get(this.api + 'userinfo');
+  }
+
+}
+
+---------------
+login html
+
+
+<div class="container mt-5 bg-light text-dark ">
+    <h2>Login Form</h2>
+
+<form  method="post">
+ 
+
+  <div class="container">
+    <label for="uname"><b>Username :  </b></label>
+    <input type="text" placeholder="Enter Username" name="uname" required><br><br>
+    
+
+    <label for="psw"><b>Password : </b></label>
+    <input type="password" placeholder="Enter Password" name="psw" required><br><br>
+        
+    <button type="submit">Login</button><br><br>
+    
+  </div>
+
+  <div class="container" style="background-color:#f1f1f1">
+    
+ 
+  </div>
+</form>
+</div>
+----------------
+login ts
+------------------------
+
+home ts
+
+import { Component, OnInit } from '@angular/core';
+import { AppServiceService } from '../app-service.service';
+@Component({
+  selector: 'app-home',
+  templateUrl: './home.component.html',
+  styleUrls: ['./home.component.css']
+})
+export class HomeComponent implements OnInit {
+
+  imgUrl:string= "assets/todays.PNG"
+  constructor(private service:AppServiceService) { }
+
+  ngOnInit(): void {
+    this.getDataFromAPI();
+
+  }
+
+  getDataFromAPI(){
+    this.service.getData().subscribe((response)=>{
+      console.log('Response from API is', response)},
+      (error)=>{console.log("Error is ", error)})
+  }
+
+}
+------------------
+
+
+
+
+
+
+
